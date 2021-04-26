@@ -1,4 +1,4 @@
-// Copyright 2019 - See NOTICE file for copyright holders.
+// Copyright 2021 - See NOTICE file for copyright holders.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -152,21 +152,26 @@ contract Adjudicator {
      * - event Concluded
      *
      * @param params The parameters of the channel and its subchannels.
-     * @param state The previously stored state of the channel.
-     * @param subStates The previously stored states of the subchannels in depth-first order.
+     * @param state The state of the channel.
+     * @param subParams The parameters of the subchannels in depth-first order.
+     * @param subStates The states of the subchannels in depth-first order.
      */
     function conclude(
         Channel.Params memory params,
         Channel.State memory state,
+        Channel.Params[] memory subParams,
         Channel.State[] memory subStates)
     external
     {
         Dispute memory dispute = requireGetDispute(state.channelID);
         require(dispute.phase != uint8(DisputePhase.CONCLUDED), "channel already concluded");
         requireValidParams(params, state);
+        for (uint256 i = 0; i < subStates.length; i++) {
+            requireValidParams(subParams[i], subStates[i]);
+        }
 
         ensureTreeConcluded(state, subStates);
-        pushOutcome(state, subStates, params.participants);
+        pushOutcome(params, state, subParams, subStates);
     }
 
     /**
@@ -200,8 +205,9 @@ contract Adjudicator {
 
         storeChallenge(params, state, DisputePhase.CONCLUDED);
 
+        Channel.Params[] memory subParams = new Channel.Params[](0);
         Channel.State[] memory subStates = new Channel.State[](0);
-        pushOutcome(state, subStates, params.participants);
+        pushOutcome(params, state, subParams, subStates);
     }
 
     /**
@@ -412,41 +418,58 @@ contract Adjudicator {
      * @notice Function `pushOutcome` pushes the accumulated outcome of the
      * channel identified by `state.channelID` and its subchannels referenced by
      * `subStates` to the assetholder contracts.
+     * Only the outcome of the participants of the root channel will be pushed.
      * The following must be guaranteed when calling the function:
-     * - state and subStates conform with participants
+     * - the parameters have been validated
      * - the outcome has not been pushed yet
+     * @param params The channel's parameters.
      * @param state The state of the channel.
-     * @param subStates The states of the subchannels of the channel in
-     * depth-first order.
-     * @param participants The participants of the channel and the subchannels.
+     * @param subParams The parameters of the subchannels.
+     * @param subStates The states of the subchannels in depth-first order.
      */
     function pushOutcome(
+        Channel.Params memory params,
         Channel.State memory state,
-        Channel.State[] memory subStates,
-        address[] memory participants)
+        Channel.Params[] memory subParams,
+        Channel.State[] memory subStates)
     internal
     {
         address[] memory assets = state.outcome.assets;
+        address[] memory participants = params.participants;
 
         for (uint256 a = 0; a < assets.length; a++) {
-            // accumulate outcome over channel and subchannels
+            // Accumulate outcome of channel and subchannels.
             uint256[] memory outcome = new uint256[](participants.length);
-            for (uint256 p = 0; p < outcome.length; p++) {
+            
+            for (uint256 p = 0; p < participants.length; p++) {
                 outcome[p] = state.outcome.balances[a][p];
+                
                 for (uint256 s = 0; s < subStates.length; s++) {
                     Channel.State memory subState = subStates[s];
                     require(subState.outcome.assets[a] == assets[a], "assets do not match");
 
-                    // assumes participants at same index are the same
-                    uint256 acc = outcome[p];
-                    uint256 val = subState.outcome.balances[a][p];
-                    outcome[p] = acc.add(val);
+                    (uint256 _p, bool foundPart) = getParticipantIndex(subParams[s].participants, participants[p]);
+                    if (!foundPart) {
+                        continue;
+                    }
+
+                    uint256 subOutcome = subState.outcome.balances[a][_p];
+                    outcome[p] = outcome[p].add(subOutcome);
                 }
             }
 
-            // push accumulated outcome
+            // Push accumulated outcome.
             AssetHolder(assets[a]).setOutcome(state.channelID, participants, outcome);
         }
+    }
+
+    function getParticipantIndex(address[] memory participants, address p) internal pure returns (uint256 i, bool found) {
+        for (i = 0; i < participants.length; i++) {
+            if (participants[i] == p) {
+                return (i, true);
+            }
+        }
+        return (participants.length, false);
     }
 
     /**
