@@ -96,13 +96,14 @@ contract("Adjudicator", async (accounts) => {
   }
 
   function conclude(tx: Transaction): Promise<Truffle.TransactionResponse> {
-    return adj.conclude(tx.params.serialize(), tx.state.serialize(), [], { from: accounts[0] });
+    return adj.conclude(tx.params.serialize(), tx.state.serialize(), [], [], { from: accounts[0] });
   }
 
   function concludeWithSubchannels(ledgerChannel: Channel, subchannels: Channel[]): Promise<Truffle.TransactionResponse> {
     return adj.conclude(
       ledgerChannel.params.serialize(),
       ledgerChannel.state.serialize(),
+      subchannels.map(subchannel => subchannel.params.serialize()),
       subchannels.map(subchannel => subchannel.state.serialize()),
       {from: accounts[0]}
     );
@@ -181,6 +182,7 @@ contract("Adjudicator", async (accounts) => {
       app = appInstance.address;
       ah = await AssetHolderETH.new(adj.address);
       asset = ah.address;
+      await adj.registerAssetHolder(asset, asset);
   
       // app deployed, we can calculate the default parameters and channel id
       params = new Params(app, timeout, nonce, [parts[A], parts[B]]);
