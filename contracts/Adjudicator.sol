@@ -459,7 +459,8 @@ contract Adjudicator {
             }
 
             // Push accumulated outcome.
-            AssetHolder(assets[a]).setOutcome(state.channelID, participants, outcome);
+            AssetHolder ah = AssetHolder(getAssetHolder(assets[a]));
+            ah.setOutcome(state.channelID, participants, outcome);
         }
     }
 
@@ -470,6 +471,23 @@ contract Adjudicator {
             }
         }
         return (participants.length, false);
+    }
+
+    /**
+     * The assetRegistry allows us to use the same asset addresses across
+     * different EVM-compatible ledgers.
+     */
+    mapping(address => address) public assetRegistry;
+
+    function registerAssetHolder(address asset, address assetHolder) external {
+        require(assetHolder != address(0), "assetHolder must not be 0");
+        require(assetRegistry[asset] == address(0), "address taken");
+        assetRegistry[asset] = assetHolder;
+    }
+
+    function getAssetHolder(address asset) public view returns (address assetHolder) {
+        require(assetRegistry[asset] != address(0), "asset not registered");
+        return assetRegistry[asset];
     }
 
     /**
