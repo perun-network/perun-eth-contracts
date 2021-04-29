@@ -1,0 +1,32 @@
+async function main() {
+    const accounts = await ethers.getSigners();
+    let accAddresses = [];
+    // Deployment fails if too many addresses are given as parameters.
+    accAddresses[0] = accounts[0].address;
+
+    const ChannelFactory = await ethers.getContractFactory("Channel");
+    const AdjudicatorFactory = await ethers.getContractFactory("Adjudicator",);
+    const AssetHolderETHFactory = await ethers.getContractFactory("AssetHolderETH");
+    const AssetHolderERC20Factory = await ethers.getContractFactory("AssetHolderERC20");
+    const PerunTokenFactory = await ethers.getContractFactory("PerunToken");
+
+    
+    const channel = await ChannelFactory.deploy(); 
+    console.log("Channel deployed to address:", channel.address);
+    const adjudicator = await AdjudicatorFactory.deploy();
+    console.log("Adjudicator deployed to address:", adjudicator.address);
+
+    const assetholderETH = await AssetHolderETHFactory.deploy(adjudicator.address);
+    console.log("AssetHolderETH deployed to address:", assetholderETH.address);
+    const perunToken = await PerunTokenFactory.deploy(accAddresses, 1<<10)
+    console.log("PerunToken deployed to address:", perunToken.address);
+    const assetholderERC20 = await AssetHolderERC20Factory.deploy(adjudicator.address, perunToken.address);
+    console.log("AssetHolderERC20 deployed to address:", assetholderERC20.address);
+}
+
+main()
+    .then(() => process.exit(0))
+    .catch(error => {
+        console.error(error);
+        process.exit(1);
+    });

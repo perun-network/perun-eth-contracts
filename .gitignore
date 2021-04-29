@@ -3,6 +3,11 @@ yarn-error.log
 
 # generated files
 /build
+/build-ovm
+/cache
+/cache-ovm
+/artifacts
+/artifacts-ovm
 /types
 /coverage
 /test/*.js.map
