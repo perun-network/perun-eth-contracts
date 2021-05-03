@@ -2,7 +2,8 @@ async function main() {
     const accounts = await ethers.getSigners();
     let accAddresses = [];
     // Deployment fails if too many addresses are given as parameters.
-    accAddresses[0] = accounts[0].address;
+    accAddresses[0] = accounts[0].address; // Prefund Alice.
+    accAddresses[1] = accounts[1].address; // Prefund Bob.
 
     const ChannelFactory = await ethers.getContractFactory("Channel");
     const AdjudicatorFactory = await ethers.getContractFactory("Adjudicator",);
@@ -18,7 +19,7 @@ async function main() {
 
     const assetholderETH = await AssetHolderETHFactory.deploy(adjudicator.address);
     console.log("AssetHolderETH deployed to address:", assetholderETH.address);
-    const perunToken = await PerunTokenFactory.deploy(accAddresses, 1<<10)
+    const perunToken = await PerunTokenFactory.deploy(accAddresses, "1000000000000000000000");
     console.log("PerunToken deployed to address:", perunToken.address);
     const assetholderERC20 = await AssetHolderERC20Factory.deploy(adjudicator.address, perunToken.address);
     console.log("AssetHolderERC20 deployed to address:", assetholderERC20.address);

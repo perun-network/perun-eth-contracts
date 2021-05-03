@@ -21,23 +21,47 @@ module.exports = {
         mnemonic: 'pistol kiwi shrug future ozone ostrich match remove crucial oblige cream critic'
       }
     },
-    optimism: {
+
+    optimism_local: {
+      url: 'http://127.0.0.1:8545',
+      accounts: {
+        mnemonic: 'pistol kiwi shrug future ozone ostrich match remove crucial oblige cream critic'
+      },
+      gasPrice: 0,
+      ovm: true
+    },
+
+    optimism_kovan: {
       url: 'https://kovan.optimism.io',
       accounts: {
         mnemonic: 'pistol kiwi shrug future ozone ostrich match remove crucial oblige cream critic'
       },
-      // This sets the gas price to 0 for all transactions on L2. We do this
-      // because account balances are not automatically initiated with an ETH
-      // balance (yet, sorry!).
       gasPrice: 0,
-      ovm: true // This sets the network as using the ovm and ensure contract will be compiled against that.
+      ovm: true
+    },
+
+    arbitrum_local: {
+      url: 'http://172.107.242.118:8547',
+      accounts: {
+        mnemonic: 'pistol kiwi shrug future ozone ostrich match remove crucial oblige cream critic'
+      },
+      gasPrice: 0
+    },
+
+    arbitrum_kovan: {
+      url: 'https://kovan4.arbitrum.io/rpc',
+      accounts: {
+        mnemonic: 'pistol kiwi shrug future ozone ostrich match remove crucial oblige cream critic'
+      },
+      gasPrice: 0
     }
   },
+
   solidity: '0.7.6',
   ovm: {
     solcVersion: '0.7.6'
   },
   namedAccounts: {
-    deployer: 0
+    deployer: 3
   },
 }
