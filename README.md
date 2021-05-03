@@ -52,8 +52,23 @@ $ yarn test
 ```
 This has been tested with Truffle version `5.1.46`.
 
+## Deployment
+We use [Hardhat](https://hardhat.org/) for compiling and deploying our contracts. Hardhat can be automatically installed by running ```yarn``` or `yarn install`.
+
+1. First, you have to compile the contracts for a desired network defined in `hardhat.config.js` by
+running:
+```sh
+$ npx hardhat compile --network network_name 
+```
+
+2. After that, the contracts can be deployed on the desired network by running the script `scripts/deploy.js` using hardhat:
+```sh
+$ npx hardhat run scripts/deploy.js --network network_name 
+```
+That's it! Now you should see all deployed contracts with their corresponding addresses in your console.
+
 ## Copyright
-Copyright 2020 - See [NOTICE](NOTICE) file for copyright holders.
+Copyright 2021 - See [NOTICE](NOTICE) file for copyright holders.
 Use of the source code is governed by the Apache 2.0 license that can be found in the [LICENSE file](LICENSE).
 
 Contact us at [info@perun.network](mailto:info@perun.network).
