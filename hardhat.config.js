@@ -23,7 +23,7 @@ module.exports = {
     },
 
     optimism_local: {
-      url: 'http://127.0.0.1:8545',
+      url: 'http://172.107.242.118:8545',
       accounts: {
         mnemonic: 'pistol kiwi shrug future ozone ostrich match remove crucial oblige cream critic'
       },
@@ -57,7 +57,15 @@ module.exports = {
     }
   },
 
-  solidity: '0.7.6',
+  solidity: {
+    version: "0.7.6",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200
+      }
+    }
+  },
   ovm: {
     solcVersion: '0.7.6'
   },
