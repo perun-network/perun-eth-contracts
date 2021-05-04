@@ -58,12 +58,12 @@ We use [Hardhat](https://hardhat.org/) for compiling and deploying our contracts
 1. First, you have to compile the contracts for a desired network defined in `hardhat.config.js` by
 running:
 ```sh
-$ npx hardhat compile --network network_name 
+$ yarn run hardhat compile --network network_name 
 ```
 
 2. After that, the contracts can be deployed on the desired network by running the script `scripts/deploy.js` using hardhat:
 ```sh
-$ npx hardhat run scripts/deploy.js --network network_name 
+$ yarn run hardhat run scripts/deploy.js --network network_name 
 ```
 That's it! Now you should see all deployed contracts with their corresponding addresses in your console.
 
