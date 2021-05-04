@@ -22,8 +22,16 @@ module.exports = {
       }
     },
 
+    ganache: {
+      url: 'http://127.0.0.1:8545',
+      accounts: {
+        mnemonic: 'pistol kiwi shrug future ozone ostrich match remove crucial oblige cream critic'
+      },
+      gasPrice: 0,
+    },
+
     optimism_local: {
-      url: 'http://172.107.242.118:8545',
+      url: 'http://127.0.0.1:8545',
       accounts: {
         mnemonic: 'pistol kiwi shrug future ozone ostrich match remove crucial oblige cream critic'
       },
@@ -41,7 +49,7 @@ module.exports = {
     },
 
     arbitrum_local: {
-      url: 'http://172.107.242.118:8547',
+      url: 'http://127.0.0.1:8547',
       accounts: {
         mnemonic: 'pistol kiwi shrug future ozone ostrich match remove crucial oblige cream critic'
       },
