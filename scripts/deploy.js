@@ -39,8 +39,7 @@ async function main() {
 
 
     const fs = require('fs');
-    let deployedContractsJSON = JSON.stringify(deployedContracts);
-    fs.writeFileSync('deployed-contracts.json', deployedContractsJSON);
+    fs.writeFileSync('deployed-contracts.json', JSON.stringify(deployedContracts, null, "\t"));
 }
 
 main()
