@@ -15,7 +15,16 @@ async function main() {
     const AssetHolderERC20Factory = await ethers.getContractFactory("AssetHolderERC20", deployer);
     const PerunTokenFactory = await ethers.getContractFactory("PerunToken", deployer);
 
-    let deployedContracts = {};
+    let deployedContracts = {
+        "assets": {
+            "ETH": {
+                "type": "eth"
+            },
+            "PerunToken": {
+                "type": "erc20"
+            }
+        }
+    };
 
     const channel = await ChannelFactory.deploy(overrides = {nonce: nonce++}); 
     console.log("Channel deployed to address:", channel.address);
@@ -27,15 +36,15 @@ async function main() {
 
     const assetholderETH = await AssetHolderETHFactory.deploy(adjudicator.address, overrides = {nonce: nonce++});
     console.log("AssetHolderETH deployed to address:", assetholderETH.address);
-    deployedContracts.assetholderETH = assetholderETH.address;
+    deployedContracts.assets.ETH.assetholder = assetholderETH.address;
 
     const perunToken = await PerunTokenFactory.deploy(accAddresses, "1000000000000000000000", overrides = {nonce: nonce++});
     console.log("PerunToken deployed to address:", perunToken.address);
-    deployedContracts.perunToken = perunToken.address;
+    deployedContracts.assets.PerunToken.address = perunToken.address;
 
     const assetholderERC20 = await AssetHolderERC20Factory.deploy(adjudicator.address, perunToken.address, overrides = {nonce: nonce++});
     console.log("AssetHolderERC20 deployed to address:", assetholderERC20.address);
-    deployedContracts.assetholderERC20 = assetholderERC20.address;
+    deployedContracts.assets.PerunToken.assetholder = assetholderERC20.address;
 
 
     const fs = require('fs');
