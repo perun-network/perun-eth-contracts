@@ -1,4 +1,4 @@
-async function main() {
+async function deploy(contractsFileName) {
     const accounts = await ethers.getSigners();
     let accAddresses = [];
     // Deployment fails if too many addresses are given as parameters.
@@ -26,7 +26,7 @@ async function main() {
         }
     };
 
-    const channel = await ChannelFactory.deploy(overrides = {nonce: nonce++}); 
+    const channel = await ChannelFactory.deploy(overrides = {nonce: nonce++});
     console.log("Channel deployed to address:", channel.address);
     deployedContracts.channel = channel.address;
 
@@ -48,12 +48,11 @@ async function main() {
 
 
     const fs = require('fs');
-    fs.writeFileSync('deployed-contracts.json', JSON.stringify(deployedContracts, null, "\t"));
+    if (!contractsFileName.endsWith('.json')) {
+        contractsFileName = contractsFileName.concat('.json');
+    }
+    fs.writeFileSync(contractsFileName, JSON.stringify(deployedContracts, null, "\t"));
 }
 
-main()
-    .then(() => process.exit(0))
-    .catch(error => {
-        console.error(error);
-        process.exit(1);
-    });
+
+module.exports = {deploy}

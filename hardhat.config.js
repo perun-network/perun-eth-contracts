@@ -3,6 +3,8 @@ require('@nomiclabs/hardhat-waffle')
 require('@eth-optimism/hardhat-ovm')
 require("@nomiclabs/hardhat-truffle5");
 require('hardhat-deploy')
+const proll_deploy = require('./scripts/proll-deploy.js');
+
 
 task("accounts", "Prints the list of accounts", async () => {
     const accounts = await ethers.getSigners();
@@ -13,6 +15,12 @@ task("accounts", "Prints the list of accounts", async () => {
       console.log(account.address);
     }
   });
+
+task("proll-deploy", "Deploys the Perun contracts")
+    .addParam("filename", "The filename for writing the contract addesses", "deployed-contracts.json")
+    .setAction(async taskArgs => {
+      await proll_deploy.deploy(taskArgs.filename);
+    });
 
 module.exports = {
   networks: {

@@ -61,11 +61,13 @@ running:
 $ yarn run hardhat compile --network network_name 
 ```
 
-2. After that, the contracts can be deployed on the desired network by running the script `scripts/deploy.js` using hardhat:
+2. After that, the contracts can be deployed on the desired network by running the `proll-deploy` command using hardhat:
 ```sh
-$ yarn run hardhat run scripts/deploy.js --network network_name 
+$ yarn run hardhat proll-deploy --network network_name 
 ```
-That's it! Now you should see all deployed contracts with their corresponding addresses in your console.
+That's it! Now you should see all deployed contracts with their corresponding addresses in your console as well as in 
+the newly created `deployed_contracts.json` file. \
+_Hint: You can change the filename using the `filename` flag, e.g., `--filename custom_filename.json`._
 
 ## Copyright
 Copyright 2021 - See [NOTICE](NOTICE) file for copyright holders.
