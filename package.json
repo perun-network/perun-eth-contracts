@@ -10,6 +10,7 @@
     "solhint": "^3.3.2",
     "truffle": "5.1.46",
     "truffle-assertions": "^0.7.2",
+    "truffle-plugin-verify": "^0.5.8",
     "typechain": "^0.3.11",
     "typescript": "^4.2.2",
     "web3": "^1.2.6"
@@ -28,6 +29,7 @@
     "eth-gas-reporter": "^0.2.19",
     "solidity-coverage": "^0.7.0",
     "truffle-error": "^0.0.5",
+    "truffle-privatekey-provider": "^1.5.0",
     "truffle-security": "^1.5.5",
     "truffle-typings": "^1.0.8",
     "web3-eth": "^1.2.6",
