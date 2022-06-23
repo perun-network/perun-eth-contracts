@@ -837,7 +837,7 @@ contract("Adjudicator", async (accounts) => {
     });
   });
 
-  describe("conclude with multi-ledger assets", () => {
+  describeWithBlockRevert("conclude with multi-ledger assets", () => {
     let channelID: string;
     let tx: Transaction;
 
@@ -854,20 +854,19 @@ contract("Adjudicator", async (accounts) => {
 
     it("concludeFinal asset same chain", async () => {
       await prepare(asset);
-      let res = register(tx);
-      await assertRegister(res, tx);
       truffleAssert.eventEmitted(await concludeFinal(tx), "OutcomeSet",
           (ev: any) => { return ev.channelID == channelID; });
       assert(await ah.settled.call(channelID));
+      //TODO check outcome
     });
 
     it("concludeFinal asset different chain", async () => {
       const chainID = await getChainID();
       const diffAsset = new Asset(chainID + 1, ah.address);
       await prepare(diffAsset);
-      let res = register(tx);
-      await assertRegister(res, tx);
+      await concludeFinal(tx);
       assert(!await ah.settled.call(channelID));
+      //TODO check outcome
     });
   })
 
