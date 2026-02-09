@@ -9,3 +9,13 @@ yarn-error.log
 /test/*.js
 package-lock.json
 coverage.json
+
+# Hardhat
+cache/
+artifacts/
+typechain/
+typechain-types/
+coverage/
+coverage.json
+hardhat.config.ts.map
+hardhat-verification.json
