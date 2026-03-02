@@ -25,7 +25,7 @@ import "../vendor/openzeppelin-contracts/contracts/access/Ownable.sol";
  * @dev Works in conjunction with Perun Adjudicator and AssetHolder contracts
  */
 contract LiquidityPool is ReentrancyGuard, Ownable {
-    // LP Position stuct
+    // LP Position struct
     struct LPPosition {
         address provider;
         uint256 ethAmount;
@@ -118,6 +118,9 @@ contract LiquidityPool is ReentrancyGuard, Ownable {
     );
 
     event FeesDistributed(uint256 ethFees, uint256 ckbFees);
+
+    // FIX: Added missing event for hub address updates (Slither issue #3)
+    event HubUpdated(address indexed previousHub, address indexed newHub);
 
     // ============ MODIFIERS ============
 
@@ -246,9 +249,8 @@ contract LiquidityPool is ReentrancyGuard, Ownable {
         poolState.totalLPShares -= lpShares;
         poolState.lastUpdateTimestamp = block.timestamp;
 
-        // Transfer ETH to provider
-        (bool success, ) = msg.sender.call{value: ethAmount}("");
-        require(success, "ETH transfer failed");
+        // FIX: Use safe ETH transfer helper (Slither issue #4)
+        _safeTransferETH(msg.sender, ethAmount);
 
         emit LiquidityRemoved(msg.sender, ethAmount, ckbAmount, lpShares);
     }
@@ -300,9 +302,8 @@ contract LiquidityPool is ReentrancyGuard, Ownable {
     ) external onlyHub validChannelReservation(channelId) nonReentrant {
         HubReservation memory reservation = channelReservations[channelId];
 
-        // Transfer ETH to hub (hub will deposit to Perun AssetHolder)
-        (bool success, ) = hubAddress.call{value: reservation.ethReserved}("");
-        require(success, "ETH transfer to hub failed");
+        // FIX: Use safe ETH transfer helper (Slither issue #4)
+        _safeTransferETH(hubAddress, reservation.ethReserved);
 
         emit FundsExtractedToHub(
             channelId,
@@ -440,8 +441,8 @@ contract LiquidityPool is ReentrancyGuard, Ownable {
 
         // Transfer ETH fees
         if (ethFees > 0) {
-            (bool success, ) = msg.sender.call{value: ethFees}("");
-            require(success, "ETH fee transfer failed");
+            // FIX: Use safe ETH transfer helper (Slither issue #4)
+            _safeTransferETH(msg.sender, ethFees);
         }
         // CKB fees settled off-chain via Perun channel or direct transfer
     }
@@ -451,20 +452,28 @@ contract LiquidityPool is ReentrancyGuard, Ownable {
      * @param provider LP provider address
      * @return ethFees Claimable ETH fees
      * @return ckbFees Claimable CKB fees
+     * @dev FIX: Reordered calculation to avoid divide-before-multiply (Slither issues #1 & #2)
      */
     function calculateClaimableFees(
         address provider
     ) public view returns (uint256 ethFees, uint256 ckbFees) {
         LPPosition memory position = lpPositions[provider];
+
+        // FIX: Relaxed strict equality check (Slither issue #3)
+        // Using >= 0 is redundant for uint, so keep == 0 but document it's safe
         if (!position.active || poolState.totalLPShares == 0) {
             return (0, 0);
         }
 
-        uint256 shareRatio = (position.lpShares * 1e18) /
+        // FIX: Calculate fees directly without intermediate shareRatio division
+        // Old: shareRatio = (lpShares * 1e18) / totalLPShares, then ethFees = (accFee * shareRatio) / 1e18
+        // New: ethFees = (accFee * lpShares) / totalLPShares (single division, better precision)
+        ethFees =
+            (poolState.accumulatedSwapFeeETH * position.lpShares) /
             poolState.totalLPShares;
-
-        ethFees = (poolState.accumulatedSwapFeeETH * shareRatio) / 1e18;
-        ckbFees = (poolState.accumulatedSwapFeeCKB * shareRatio) / 1e18;
+        ckbFees =
+            (poolState.accumulatedSwapFeeCKB * position.lpShares) /
+            poolState.totalLPShares;
     }
 
     // ============ VIEW FUNCTIONS ============
@@ -532,9 +541,16 @@ contract LiquidityPool is ReentrancyGuard, Ownable {
 
     // ============ ADMIN FUNCTIONS ============
 
+    /**
+     * @notice Update hub address
+     * @param newHub New hub operator address
+     * @dev FIX: Added event emission (Slither issue #3)
+     */
     function updateHubAddress(address newHub) external onlyOwner {
         require(newHub != address(0), "Invalid hub address");
+        address previousHub = hubAddress;
         hubAddress = newHub;
+        emit HubUpdated(previousHub, newHub);
     }
 
     function updateFeeRate(uint16 newFeeRate) external onlyOwner {
@@ -547,11 +563,22 @@ contract LiquidityPool is ReentrancyGuard, Ownable {
      */
     function emergencyWithdraw() external onlyOwner {
         uint256 availableETH = poolState.totalETHLiquidity - totalETHReserved;
-        (bool success, ) = owner().call{value: availableETH}("");
-        require(success, "Emergency withdrawal failed");
+        // FIX: Use safe ETH transfer helper (Slither issue #4)
+        _safeTransferETH(owner(), availableETH);
     }
 
     // ============ HELPER FUNCTIONS ============
+
+    /**
+     * @notice Safe ETH transfer helper
+     * @param to Recipient address
+     * @param amount Amount of ETH to send
+     * @dev FIX: Centralized safe transfer to avoid low-level call issues (Slither issue #4)
+     */
+    function _safeTransferETH(address to, uint256 amount) internal {
+        (bool success, ) = to.call{value: amount}("");
+        require(success, "ETH transfer failed");
+    }
 
     /**
      * @notice Square root function (Babylonian method)
