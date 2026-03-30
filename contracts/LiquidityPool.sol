@@ -97,11 +97,11 @@ contract LiquidityPool is ReentrancyGuard, Ownable {
     function previewDepositShares(
         uint256 ethAmount
     ) external view returns (uint256) {
-        if (ethAmount == 0) {
+        if (ethAmount < 1) {
             return 0;
         }
 
-        if (totalShares == 0) {
+        if (totalShares < 1) {
             return ethAmount;
         }
 
@@ -111,7 +111,7 @@ contract LiquidityPool is ReentrancyGuard, Ownable {
     function previewWithdrawETH(
         uint256 sharesAmount
     ) external view returns (uint256) {
-        if (sharesAmount == 0 || totalShares == 0) {
+        if (sharesAmount < 1 || totalShares < 1) {
             return 0;
         }
 
@@ -127,7 +127,7 @@ contract LiquidityPool is ReentrancyGuard, Ownable {
         uint256 ethAmount = msg.value;
         require(ethAmount > 0, "Deposit must be > 0");
 
-        if (totalShares == 0) {
+        if (totalShares < 1) {
             mintedShares = ethAmount;
         } else {
             uint256 assetsBefore = totalAssets() - ethAmount;
@@ -166,7 +166,7 @@ contract LiquidityPool is ReentrancyGuard, Ownable {
         uint256 amount
     ) external onlyOperator nonReentrant {
         require(amount > 0, "Amount must be > 0");
-        require(lockedByChannel[channelId] == 0, "Channel already funded");
+        require(lockedByChannel[channelId] < 1, "Channel already funded");
         require(amount <= withdrawableETH(), "Insufficient free liquidity");
 
         lockedByChannel[channelId] = amount;
