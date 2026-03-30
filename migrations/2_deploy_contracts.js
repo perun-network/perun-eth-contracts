@@ -17,13 +17,17 @@ var AssetHolderETH = artifacts.require("AssetHolderETH");
 var AssetHolderERC20 = artifacts.require("AssetHolderERC20");
 var PerunToken = artifacts.require("PerunToken");
 var Channel = artifacts.require("Channel");
+var LiquidityPool = artifacts.require("LiquidityPool");
 
-module.exports = async function(deployer, _network, accounts) {
+module.exports = async function (deployer, _network, accounts) {
   await deployer.deploy(Channel);
   await deployer.link(Channel, Adjudicator);
   await deployer.deploy(Adjudicator);
 
   await deployer.deploy(AssetHolderETH, Adjudicator.address);
-  await deployer.deploy(PerunToken, accounts, 1<<10);
+  await deployer.deploy(PerunToken, accounts, 1 << 10);
   await deployer.deploy(AssetHolderERC20, Adjudicator.address, PerunToken.address);
+
+  // MVP default: deployer account also acts as initial trusted operator.
+  await deployer.deploy(LiquidityPool, accounts[0]);
 };
