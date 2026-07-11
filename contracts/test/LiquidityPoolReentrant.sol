@@ -22,24 +22,28 @@ import "../LiquidityPool.sol";
 contract LiquidityPoolReentrant {
     LiquidityPool public immutable pool;
     bool public attack;
+    uint256 public reentrantWithdrawn;
 
     constructor(LiquidityPool _pool) {
         pool = _pool;
     }
 
-    function depositToPool() external payable {
-        pool.deposit{value: msg.value}();
+    function depositToPool() external payable returns (uint256 mintedShares) {
+        mintedShares = pool.deposit{value: msg.value}();
     }
 
-    function withdrawFromPool(uint256 shares, bool _attack) external {
-        attack = _attack;
-        pool.withdraw(shares);
+    function withdrawFromPool(
+        uint256 shares,
+        bool shouldAttack
+    ) external returns (uint256 ethAmountOut) {
+        attack = shouldAttack;
+        ethAmountOut = pool.withdraw(shares);
     }
 
     receive() external payable {
         if (attack) {
             attack = false;
-            pool.withdraw(1);
+            reentrantWithdrawn = pool.withdraw(1);
         }
     }
 }
