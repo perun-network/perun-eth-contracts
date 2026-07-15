@@ -105,6 +105,75 @@ describe("LiquidityPool", function () {
         });
     });
 
+    describe("depositFor", () => {
+        it("mints the shares to the beneficiary, not the caller", async () => {
+            const amount = ethers.parseEther("10");
+            await pool
+                .connect(operator)
+                .depositFor(await lp1.getAddress(), { value: amount });
+
+            expect(await pool.sharesOf(await lp1.getAddress())).to.equal(amount);
+            expect(await pool.sharesOf(await operator.getAddress())).to.equal(0n);
+            expect(await pool.totalShares()).to.equal(amount);
+        });
+
+        it("prices identically to deposit", async () => {
+            await pool.connect(lp1).deposit({ value: ethers.parseEther("10") });
+
+            const amount2 = ethers.parseEther("5");
+            expect(await pool.previewDepositShares(amount2)).to.equal(amount2);
+
+            await pool
+                .connect(operator)
+                .depositFor(await lp2.getAddress(), { value: amount2 });
+
+            expect(await pool.sharesOf(await lp2.getAddress())).to.equal(amount2);
+            expect(await pool.totalShares()).to.equal(ethers.parseEther("15"));
+        });
+
+        it("emits Deposited crediting the beneficiary", async () => {
+            const amount = ethers.parseEther("3");
+            await expect(
+                pool
+                    .connect(operator)
+                    .depositFor(await lp1.getAddress(), { value: amount })
+            )
+                .to.emit(pool, "Deposited")
+                .withArgs(await lp1.getAddress(), amount, amount);
+        });
+
+        it("rejects the zero beneficiary", async () => {
+            await expect(
+                pool
+                    .connect(operator)
+                    .depositFor(ethers.ZeroAddress, { value: ethers.parseEther("1") })
+            ).to.be.revertedWith("Invalid beneficiary");
+        });
+
+        it("rejects zero value", async () => {
+            await expect(
+                pool.connect(operator).depositFor(await lp1.getAddress(), { value: 0n })
+            ).to.be.revertedWith("Deposit must be > 0");
+        });
+
+        it("lets the beneficiary withdraw the credited ETH", async () => {
+            const amount = ethers.parseEther("4");
+            await pool
+                .connect(operator)
+                .depositFor(await lp1.getAddress(), { value: amount });
+
+            const shares = await pool.sharesOf(await lp1.getAddress());
+            const before = await ethers.provider.getBalance(await lp1.getAddress());
+            const tx = await pool.connect(lp1).withdraw(shares);
+            const receipt = await tx.wait();
+            const gas = receipt!.gasUsed * receipt!.gasPrice;
+            const after = await ethers.provider.getBalance(await lp1.getAddress());
+
+            expect(after - before + gas).to.equal(amount);
+            expect(await pool.sharesOf(await lp1.getAddress())).to.equal(0n);
+        });
+    });
+
     describe("withdraw", () => {
         it("supports partial withdrawal", async () => {
             await pool.connect(lp1).deposit({ value: ethers.parseEther("10") });

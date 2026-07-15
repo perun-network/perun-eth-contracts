@@ -190,6 +190,27 @@ contract LiquidityPool is ReentrancyGuard, Ownable {
         nonReentrant
         returns (uint256 mintedShares)
     {
+        return _deposit(msg.sender);
+    }
+
+    /// @notice Deposits on behalf of beneficiary, minting the shares to it
+    ///         rather than to the caller. Priced identically to {deposit};
+    ///         the caller retains no claim on the deposited ETH.
+    /// @dev Used by the operator to credit a CKB LP cell's traded
+    ///      countervalue to that cell's owner-designated beneficiary. The
+    ///      beneficiary address is read from the cell's on-chain data, so a
+    ///      conversion cannot be redirected off-chain.
+    function depositFor(
+        address beneficiary
+    ) external payable nonReentrant returns (uint256 mintedShares) {
+        require(beneficiary != address(0), "Invalid beneficiary");
+
+        return _deposit(beneficiary);
+    }
+
+    function _deposit(
+        address beneficiary
+    ) private returns (uint256 mintedShares) {
         uint256 ethAmount = msg.value;
         require(ethAmount > 0, "Deposit must be > 0");
 
@@ -197,10 +218,10 @@ contract LiquidityPool is ReentrancyGuard, Ownable {
         mintedShares = _toShares(ethAmount, totalAssets() - ethAmount);
         require(mintedShares > 0, "Minted shares = 0");
 
-        _shares[msg.sender] += mintedShares;
+        _shares[beneficiary] += mintedShares;
         totalShares += mintedShares;
 
-        emit Deposited(msg.sender, ethAmount, mintedShares);
+        emit Deposited(beneficiary, ethAmount, mintedShares);
     }
 
     /// @notice Redeems shares at the {totalAssets} price. Reverts when the
