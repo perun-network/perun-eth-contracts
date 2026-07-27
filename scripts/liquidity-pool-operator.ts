@@ -110,6 +110,24 @@ async function main() {
         return;
     }
 
+    if (action === "expire") {
+        const channelId = process.env.CHANNEL_ID;
+        if (!channelId) {
+            throw new Error("Missing CHANNEL_ID env var");
+        }
+
+        const locked = await pool.lockedByChannel(channelId);
+        const deadline = await pool.channelDeadline(channelId);
+        const block = await ethers.provider.getBlock("latest");
+        console.log("locked:", locked.toString());
+        console.log("deadline:", deadline.toString(), "now:", block?.timestamp);
+
+        const tx = await pool.expireChannel(channelId);
+        await tx.wait();
+        console.log("expire tx:", tx.hash);
+        return;
+    }
+
     throw new Error(`Unsupported ACTION: ${action}`);
 }
 
