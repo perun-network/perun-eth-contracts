@@ -48,6 +48,81 @@ State Channel apps define a single method, `validTransition`, which defines the 
 When a channel state is progressed on-chain on the Adjudicator by calling `progress`, the Adjudicator reads the address of the channel app from the channel parameters and, after performing generic state progression checks, calls the `validTransition` method on the app.
 It is assumed to revert if any app-specific check fails.
 
+## ETH Liquidity Pool MVP
+The repository includes an ETH-only liquidity pool MVP for Perun-X yield in `contracts/LiquidityPool.sol`.
+
+### Contract model
+- LPs deposit ETH and receive shares.
+- LPs withdraw by burning shares against withdrawable ETH.
+- A trusted operator funds channels and settles them back into the pool.
+- Settlement is payable and channel-specific.
+- Settlement below recorded principal is rejected.
+- Fee yield accrues implicitly as ETH backing per share increases when settlement returns above principal.
+
+### Deployment
+Build contracts first:
+```sh
+$ yarn
+$ yarn build
+```
+
+Local devnet deployment using Hardhat Ignition:
+```sh
+$ npx hardhat ignition deploy ignition/modules/LiquidityPool.ts --network localhost --parameters ignition/parameters/localhost/liquidity-pool.json
+```
+
+Sepolia deployment (after replacing the placeholder operator address):
+```sh
+$ npx hardhat ignition deploy ignition/modules/LiquidityPool.ts --network sepolia --parameters ignition/parameters/sepolia/liquidity-pool.json
+```
+
+Migration compatibility path:
+```sh
+$ npx hardhat run migrations/2_deploy_contracts.js --network localhost
+```
+
+### Operator and LP flow
+1. Owner deploys the pool with initial operator.
+2. Owner rotates operator with `setOperator` if needed.
+3. LPs call `deposit` with ETH to mint shares.
+4. Operator calls `fundChannel(channelId, amount)` to lock principal per channel and transfer funding ETH to operator custody for channel use.
+5. Operator calls `settleChannel(channelId)` with `msg.value` set to returned ETH after channel settlement.
+6. LPs call `withdraw(shares)` to burn shares and receive ETH from withdrawable liquidity.
+
+### Hub integration assumptions (MVP)
+- Pricing, quote generation, and swap matching remain off-chain in the Hub.
+- The Hub/operator is responsible for passing a stable channel identifier to `fundChannel` and `settleChannel`.
+- The Hub/operator must ensure settlement calls return at least channel principal (`msg.value >= locked principal`).
+- This contract intentionally does not implement decentralized operator governance, oracle controls, or production monitoring in MVP.
+
+### Operator helper script
+For manual dev/test operations, use `scripts/liquidity-pool-operator.ts`.
+
+Status and balances:
+```sh
+$ ACTION=status POOL_ADDRESS=0xPOOL npx hardhat run scripts/liquidity-pool-operator.ts --network localhost
+```
+
+Deposit 1 ETH from signer index 1:
+```sh
+$ ACTION=deposit POOL_ADDRESS=0xPOOL SIGNER_INDEX=1 AMOUNT_ETH=1 npx hardhat run scripts/liquidity-pool-operator.ts --network localhost
+```
+
+Fund channel (operator signer):
+```sh
+$ ACTION=fund POOL_ADDRESS=0xPOOL SIGNER_INDEX=0 CHANNEL_ID=0xCHANNEL_ID AMOUNT_WEI=1000000000000000000 npx hardhat run scripts/liquidity-pool-operator.ts --network localhost
+```
+
+Settle channel with returned ETH:
+```sh
+$ ACTION=settle POOL_ADDRESS=0xPOOL SIGNER_INDEX=0 CHANNEL_ID=0xCHANNEL_ID RETURN_WEI=1100000000000000000 npx hardhat run scripts/liquidity-pool-operator.ts --network localhost
+```
+
+Withdraw shares:
+```sh
+$ ACTION=withdraw POOL_ADDRESS=0xPOOL SIGNER_INDEX=1 SHARES_WEI=1000000000000000000 npx hardhat run scripts/liquidity-pool-operator.ts --network localhost
+```
+
 ## Testing
 The repository must be cloned recursively including [submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules).
 [Yarn](https://yarnpkg.com) and [Hardhat](https://hardhat.org/hardhat-runner/docs/getting-started) are expected to be installed globally.
